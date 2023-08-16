@@ -30,7 +30,7 @@ public class ProcessLauncher : MonoBehaviour
 
     [DllImport("kernel32.dll")]
     // ReSharper disable once IdentifierTypo
-    private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+    public static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
 
     [DllImport("kernel32.dll")]
     private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
@@ -40,7 +40,7 @@ public class ProcessLauncher : MonoBehaviour
 
     [DllImport("kernel32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CloseHandle(IntPtr hObject);
+    public static extern bool CloseHandle(IntPtr hObject);
 
     [DllImport("kernel32.dll")]
     private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
@@ -90,7 +90,7 @@ public class ProcessLauncher : MonoBehaviour
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct ProcessInformation
+    public struct ProcessInformation
     {
         public IntPtr hProcess;
         public IntPtr hThread;
@@ -102,13 +102,13 @@ public class ProcessLauncher : MonoBehaviour
     private ProcessInformation _processInfo2;
 
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
-    private List<ProcessInformation> _processList = new List<ProcessInformation>();
+    public static List<ProcessInformation> _processList = new List<ProcessInformation>();
 
     #endregion
 
     #region Process Methods
 
-    private ProcessInformation StartExternalProcess(string programPath, string arguments)
+    public static ProcessInformation StartExternalProcess(string programPath, string arguments,string currentDirectory)
     {
         // const string programPath = @"E:\FleX-1.2.0\NvFlexDemoReleaseCUDA_x64.exe";
         // const string arguments = "-surgeryType=0";
@@ -124,7 +124,7 @@ public class ProcessLauncher : MonoBehaviour
             false,
             0,
             IntPtr.Zero,
-            null,
+            currentDirectory,
             ref startupInfo,
             out var processInfo
         );
@@ -142,7 +142,7 @@ public class ProcessLauncher : MonoBehaviour
         }
     }
 
-    private static void TerminateExternalProcess(ProcessInformation processInfo)
+    public static void TerminateExternalProcess(ProcessInformation processInfo)
     {
         // ReSharper disable once InvertIf  
         if (processInfo.hProcess != IntPtr.Zero)
@@ -159,7 +159,7 @@ public class ProcessLauncher : MonoBehaviour
         }
     }
 
-    private static void CloseProcessByName(string processName, IntPtr snapShot)
+    public static void CloseProcessByName(string processName, IntPtr snapShot)
     {
         var processEntry = new PROCESSENTRY32
         {
@@ -203,8 +203,8 @@ public class ProcessLauncher : MonoBehaviour
         {
             _processInfo1 =
                 StartExternalProcess(@"D:\Projects\Log[]\LogInsights\src\LogInsights\bin\x64\Release\LogInsights.exe",
-                    null);
-            _processInfo2 = StartExternalProcess(@"C:\Windows\System32\cmd.exe", null);
+                    null,null);
+            _processInfo2 = StartExternalProcess(@"C:\Windows\System32\cmd.exe", null,null);
         }
 
         if (Input.GetKeyDown(KeyCode.B))
