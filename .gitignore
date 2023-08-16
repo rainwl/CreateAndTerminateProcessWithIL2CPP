@@ -8,3 +8,6 @@ Packages/
 obj/
 *.sln
 *.csproj
+.idea/.idea.Exe_Process/.idea/
+
+Temp/

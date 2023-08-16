@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Debug = UnityEngine.Debug;
 
+// ReSharper disable InconsistentNaming
+
 public class ProcessLauncher : MonoBehaviour
 {
     #region DLL Import
@@ -26,9 +28,43 @@ public class ProcessLauncher : MonoBehaviour
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
 
+    [DllImport("kernel32.dll")]
+    // ReSharper disable once IdentifierTypo
+    private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+
     #endregion
 
     #region Fields
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PROCESSENTRY32
+    {
+        public uint dwSize;
+        public uint cntUsage;
+        public uint th32ProcessID;
+        public IntPtr th32DefaultHeapID;
+        public uint th32ModuleID;
+        public uint cntThreads;
+        public uint th32ParentProcessID;
+        public int pcPriClassBase;
+        public uint dwFlags;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string szExeFile;
+    }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct StartUpInfo
@@ -65,6 +101,7 @@ public class ProcessLauncher : MonoBehaviour
     private ProcessInformation _processInfo1;
     private ProcessInformation _processInfo2;
 
+    // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private List<ProcessInformation> _processList = new List<ProcessInformation>();
 
     #endregion
@@ -122,6 +159,40 @@ public class ProcessLauncher : MonoBehaviour
         }
     }
 
+    private static void CloseProcessByName(string processName, IntPtr snapShot)
+    {
+        var processEntry = new PROCESSENTRY32
+        {
+            dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32))
+        };
+
+        // ReSharper disable once InvertIf
+        if (Process32First(snapShot, ref processEntry))
+        {
+            do
+            {
+                // ReSharper disable once InvertIf
+                if (processEntry.szExeFile.Equals(processName, StringComparison.OrdinalIgnoreCase))
+                {
+                    var processHandle = OpenProcess(processEntry.th32ProcessID);
+                    // ReSharper disable once InvertIf
+                    if (processHandle != IntPtr.Zero)
+                    {
+                        TerminateProcess(processHandle, 0); // Terminate the process
+                        CloseHandle(processHandle);
+                        break;
+                    }
+                }
+            } while (Process32Next(snapShot, ref processEntry));
+        }
+    }
+
+    private static IntPtr OpenProcess(uint processId)
+    {
+        const uint processTerminate = 0x0001;
+        return OpenProcess(processTerminate, false, processId);
+    }
+
     #endregion
 
     #region Test Methods
@@ -144,6 +215,15 @@ public class ProcessLauncher : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.C))
         {
             TerminateExternalProcess(_processInfo2);
+        }
+
+        // ReSharper disable once InvertIf
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            var snapshot = CreateToolhelp32Snapshot(2, 0);
+            CloseProcessByName("cmd.exe", snapshot);
+            CloseProcessByName("LogInsights.exe", snapshot);
+            CloseHandle(snapshot);
         }
     }
 
