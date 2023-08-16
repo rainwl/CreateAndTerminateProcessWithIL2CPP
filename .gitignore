@@ -1,0 +1,10 @@
+
+.idea/.idea.flex_CLose/.idea/
+Logs/
+Library/
+Build/
+ProjectSettings/
+Packages/
+obj/
+*.sln
+*.csproj
