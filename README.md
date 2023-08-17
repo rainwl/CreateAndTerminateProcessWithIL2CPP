@@ -51,6 +51,18 @@ Pressing `A` will launch two external applications. You should modify this as ne
 Pressing `B` and `C` will close these external applications based on their process 
 information. Pressing `D` will close these processes based on their names.
 
+## Notice
+
+lpCommandLine is LPTSTR, not LPCTSTR, 
+so the argument cannot be a string constant; it must be a writable array of strings
+
+```c++
+wchar_t wszCmd[] = L" -arg";
+CreateProcess(L"C:\\Program Files\\WinRAR\\WinRAR.exe", wszCmd, ...);
+```
+
+Note that wszCmd[], the content of lpCommandLine, needs a space at the beginning, otherwise it is attached to `lpApplicationName`.
+
 ## Other
 Here are some relevant links, including forums and repositories. If you find my code helpful, feel free to give it a star.
 
